@@ -30,10 +30,11 @@ word_freq_fname=''
 total_word_freq_fname=''
 pagerank_fname=''
 
-def url_filter(url):
+def url_filter(links):
     '''
+    take a list of links
     check whether to add this url to frontier or not
-    return bool
+    return valid links
     '''
     # check if valid url
     # check duplicate
