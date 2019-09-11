@@ -4,6 +4,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import os.path
 import numpy as np
+import math
 
 lemmatizer = WordNetLemmatizer()
 stop_words=set(stopwords.words('english'))
@@ -18,7 +19,7 @@ web_graph=list() #web_graph[doc_id]=list(child_id)
 word_frequency=list() #word_frequency[doc_id]=dict(term:frequency)
 # number of documents per word
 total_word_freq=dict() #total_word_freq[term]=frequency
-pagerank=list() #pagerank[doc_id]=ranking
+pageranks=list() #pagerank[doc_id]=ranking
 
 seed_url=''
 crawl_num=1000
@@ -30,15 +31,19 @@ word_freq_fname=''
 total_word_freq_fname=''
 pagerank_fname=''
 
-def url_filter(links):
+def url_filter(links, doc_id):
     '''
     take a list of links
     check whether to add this url to frontier or not
     return valid links
     '''
-    # check if valid url
-    # check duplicate
-    return
+    valid_links=[]
+    for link in links:
+        if link in url_crawled:
+            web_graph[docs.index(link)][0].append(doc_id)
+        elif ("/wiki/" in link):
+            valid_links.append(link)
+    return valid_links
 
 def process_words(w):
     '''
@@ -158,12 +163,40 @@ def pagerank():
     '''
     takes in the web_graph and construct the pagerank list
     '''
+    epsilon = 10e-5
+    alpha = 0.85
+    graph = [np.array(node) for node in web_graph]
+    num_doc = len(url_crawled)
+    initial_rank = 1/num_doc
+    constant_factor = (1-alpha)/num_doc
+    cur_rank = np.repeat(initial_rank, num_doc)
+    prev_rank = cur_rank.copy()
+    while (abs(cur_rank-prev_rank) > epsilon).all():
+        prev_rank = cur_rank.copy()
+        for i in range(num_doc):
+            # web_graph is a list of (parents, children)
+            cur_rank[i] = constant_factor+alpha*np.sum(cur_rank(graph[i][0])/[len(graph[parent][1]) for parent in graph[i][0]])
+    pageranks = cur_rank
+    return
 
 def freqrank(pages,words):
     '''
     takes in a list of doc_ids and a list of query words
     rank the pages according to the word frequency
     '''
+    #term frequencies
+    page_len = []
+    for page in pages:
+        page_len.append(sum(word_frequency[page].values()))
+    term_freq = []
+    for page in pages:
+        word_freq= []
+        for word in words:
+            word_freq.append(word_frequency[page][word])
+        term_freq.append(sum(word_freq))
+    #inverted document frequencies
+    idf = math.log(len(url_crawled)/len(pages))
+    return np.array(term_freq)*idf
 
 def crawl():
     '''
