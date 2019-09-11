@@ -141,16 +141,15 @@ def parse_page(url,parent_id):
         else:
             total_word_freq[w]=1
 
+    #add this page to the web graph
+    web_graph.append((list(),list()))
+    if parent_id>=0:
+        web_graph[parent_id][1].append(doc_id)
+        web_graph[doc_id][0].append(parent_id)
     #process the links and add to the frontier
-    filtered_links=url_filter(links)
+    filtered_links=url_filter(links,doc_id)
     link_pairs=[(l,doc_id) for l in filtered_links]
     url_frontier.extend(link_pairs)
-
-    #add this page to the web graph
-    if parent_id>=0:
-        web_graph[parent_id].append(doc_id)
-    web_graph.append(list())
-
     #add to docs
     docs.append(url)
     url_crawled.append(url)
