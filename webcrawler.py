@@ -146,16 +146,15 @@ def parse_page(url,parent_id):
         else:
             total_word_freq[w]=1
 
+    #add this page to the web graph
+    web_graph.append((list(),list()))
+    if parent_id>=0:
+        web_graph[parent_id][1].append(doc_id)
+        web_graph[doc_id][0].append(parent_id)
     #process the links and add to the frontier
-    filtered_links=url_filter(links)
+    filtered_links=url_filter(links,doc_id)
     link_pairs=[(l,doc_id) for l in filtered_links]
     url_frontier.extend(link_pairs)
-
-    #add this page to the web graph
-    if parent_id>=0:
-        web_graph[parent_id].append(doc_id)
-    web_graph.append(list())
-
     #add to docs
     docs.append(url)
     url_crawled.append(url)
@@ -232,8 +231,36 @@ def search(query):
     '''
     # parse the query into words
     words=list()
+    qtokens=nltk.word_tokenize(query)
+    for qt in qtokens:
+        w=lemmatizer.lemmatize(qt.lower())
+        if w is not in words:
+            words.append(w)
     # look for documents starting from the most infrequent word
     results=list()
+    # get the total frequency for the words
+    freqs = list()
+    for i in range(len(words)):
+        freqs.append(total_word_freq[w])
+    freqs=np.asarray(freqs)
+    freq_rank=np.argsort(freqs) # from lowest to highest
+    candidates=list()
+    for i in range(len(words)):
+        ind=freq_rank[i]
+        if freqs[ind]==0:
+            continue
+        w=words[ind]
+        cur_docs=index[w]
+        if len(results)==0:
+            results.extend(cur_docs)
+        else:
+            cur_results=results
+            results=list()
+            for cd in cur_docs:
+                if cd is in cur_results:
+                    results.append(cd)
+    if len(results)==0:
+        return []
     # rank the documents according to page rank
     score1=[pagerank[i] for i in results]
     score1=np.asarray(score1)
@@ -245,10 +272,12 @@ def search(query):
     # combine the two rankings
     score=score1+score2
     ranking=np.argsort(score)
-    final=range(len(results))
-    for i in range(len(ranking)):
-        final[ranking[i]]=i
+    ranking=list(ranking)
+    ranking.reverse()
     # return the result
+    final=list()
+    for i in range(len(ranking)):
+        final.append(results[ranking[i]])
     return final
 
 if __name__== "__main__":
