@@ -183,11 +183,54 @@ def write_files():
     '''
     write the five files to disk
     '''
+    f=open(index_fname,"w")
+    for i in index:
+        for ii in i:
+            f.write(ii)
+            f.write(' ')
+        f.write('\n')
+    f.close()
+
+    f=open(docs_fname,"w")
+    for d in docs:
+        f.write(d)
+    f.close()
+
+    f=open(word_freq_fname,"w")
+    for i in range(len(word_frequency)):
+        f.write(i)
+        f.write('\n')
+        for w,f in word_frequency[i]:
+            f.write(w)
+            f.write(' ')
+            f.write(f)
+            f.write('\n')
+        f.write('\n')
+    f.close()
+
+    f=open(total_word_freq_fname,"w")
+    for w,f in total_word_freq:
+        f.write(w)
+        f.write(' ')
+        f.write(f)
+        f.write('\n')
+    f.close()
+
+    f=open(pagerank_fname,"w")
+    for p in pageranks:
+        f.write(p)
+        f.write('\n')
+    f.close()
 
 def parse_files():
     '''
     parse the five files and store them into the global variables
     '''
+    f=open(index_fname,"w")
+    f=open(docs_fname,"w")
+    f=open(word_freq_fname,"w")
+    f=open(total_word_freq_fname,"w")
+    f=open(pagerank_fname,"w")
     return
 
 def search(query):
@@ -252,6 +295,7 @@ if __name__== "__main__":
     if os.path.isfile(index_fname) and\
             os.path.isfile(docs_fname) and\
             os.path.isfile(word_freq_fname) and\
+            os.path.isfile(total_word_freq_fname) and\
             os.path.isfile(pagerank_fname):
         print('parsing files!...')
         parse_files()
