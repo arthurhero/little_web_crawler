@@ -21,15 +21,15 @@ word_frequency=list() #word_frequency[doc_id]=dict(term:frequency)
 total_word_freq=dict() #total_word_freq[term]=frequency
 pageranks=list() #pagerank[doc_id]=ranking
 
-seed_url=''
-crawl_num=1000
+seed_url='https://en.wikipedia.org/wiki/Main_Page'
+crawl_num=100
 
 #file names
-index_fname=''
-docs_fname=''
-word_freq_fname=''
-total_word_freq_fname=''
-pagerank_fname=''
+index_fname='index.txt'
+docs_fname='docs.txt'
+word_freq_fname='wf.txt'
+total_word_freq_fname='twf.txt'
+pagerank_fname='pr.txt'
 
 def url_filter(links, doc_id):
     '''
@@ -72,8 +72,13 @@ def parse_page(url,parent_id):
     add url to url_crawled
     '''
     # request the web
-    page = urllib.request.urlopen(url)
-    #####need some error handling here
+    try:
+        page = urllib.request.urlopen(url)
+    except ValueError:
+        return
+    except urllib.error.URLError:
+        return
+
     page_raw = str(page.read())
 
     words=list()
@@ -163,6 +168,7 @@ def pagerank():
     '''
     takes in the web_graph and construct the pagerank list
     '''
+    global pageranks
     epsilon = 10e-5
     alpha = 0.85
     graph = [np.array(node) for node in web_graph]
@@ -177,7 +183,7 @@ def pagerank():
             # web_graph is a list of (parents, children)
             cur_rank[i] = constant_factor+alpha*np.sum(cur_rank(graph[i][0])/[len(graph[parent][1]) for parent in graph[i][0]])
     pageranks = cur_rank
-    return
+    #print(pageranks)
 
 def freqrank(pages,words):
     '''
@@ -217,11 +223,11 @@ def write_files():
     write the five files to disk
     '''
     f=open(index_fname,"w")
-    for w,l in index:
+    for w,l in index.items():
         f.write(w)
         f.write(' ')
         for i in l:
-            f.write(i)
+            f.write(str(i))
             f.write(' ')
         f.write('\n')
     f.close()
@@ -234,27 +240,27 @@ def write_files():
 
     f=open(word_freq_fname,"w")
     for i in range(len(word_frequency)):
-        f.write(i)
+        f.write(str(i))
         f.write('\n')
-        for w,f in word_frequency[i]:
+        for w,fq in word_frequency[i].items():
             f.write(w)
             f.write(' ')
-            f.write(f)
+            f.write(str(fq))
             f.write('\n')
         f.write('\n')
     f.close()
 
     f=open(total_word_freq_fname,"w")
-    for w,f in total_word_freq:
+    for w,fq in total_word_freq.items():
         f.write(w)
         f.write(' ')
-        f.write(f)
+        f.write(str(fq))
         f.write('\n')
     f.close()
 
     f=open(pagerank_fname,"w")
     for p in pageranks:
-        f.write(p)
+        f.write(str(p))
         f.write('\n')
     f.close()
 
@@ -286,8 +292,8 @@ def parse_files():
             toks=nltk.word_tokenize(l)
             if len(toks)==2:
                 w=toks[0]
-                f=int(toks[1])
-                word_frequency[-1][w]=f
+                fq=int(toks[1])
+                word_frequency[-1][w]=fq
             else:
                 newdoc=True
     f.close()
@@ -297,8 +303,8 @@ def parse_files():
     for l in lines:
         toks=nltk.word_tokenize(l)
         w=toks[0]
-        f=int(toks[1])
-        total_word_freq[w]=f
+        fq=int(toks[1])
+        total_word_freq[w]=fq
     f.close()
 
     f=open(pagerank_fname,"r")
@@ -318,13 +324,15 @@ def search(query):
     qtokens=nltk.word_tokenize(query)
     for qt in qtokens:
         w=lemmatizer.lemmatize(qt.lower())
-        if w is not in words:
+        if w not in words:
             words.append(w)
     # look for documents starting from the most infrequent word
     results=list()
     # get the total frequency for the words
     freqs = list()
     for i in range(len(words)):
+        if w not in total_word_freq:
+            return []
         freqs.append(total_word_freq[w])
     freqs=np.asarray(freqs)
     freq_rank=np.argsort(freqs) # from lowest to highest
@@ -341,12 +349,12 @@ def search(query):
             cur_results=results
             results=list()
             for cd in cur_docs:
-                if cd is in cur_results:
+                if cd in cur_results:
                     results.append(cd)
     if len(results)==0:
         return []
     # rank the documents according to page rank
-    score1=[pagerank[i] for i in results]
+    score1=[pageranks[i] for i in results]
     score1=np.asarray(score1)
     score1=score1/np.sum(score1)
     # rank the documents according to word frequency
@@ -378,9 +386,17 @@ if __name__== "__main__":
         print('start crawling!...')
         crawl()
         print('finished crawling!')
+        '''
+        print(docs)
+        print(web_graph)
+        print(pageranks)
+        print(total_word_freq)
+        print(word_frequency)
+        print(index)
+        '''
 
     print('')
-    query = raw_input("please enter your query: ") 
+    query = input("please enter your query: ") 
     print('start searching!...')
     results = search(query) # a list of doc_ids
     print('finished searching! Here are the results:')
