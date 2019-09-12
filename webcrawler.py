@@ -13,7 +13,7 @@ url_frontier=list() #(url,parent_id)
 url_crawled=list()
 index=dict() #index[term]=list(doc_ids)
 docs=list() #docs[doc_id]=doc_url
-web_graph=list() #web_graph[doc_id]=list(child_id)
+web_graph=list() #web_graph[doc_id]=([parent_ids],[child_ids])
 
 # number of appearances for words per document 
 word_frequency=list() #word_frequency[doc_id]=dict(term:frequency)
