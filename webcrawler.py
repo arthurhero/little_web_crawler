@@ -217,9 +217,11 @@ def write_files():
     write the five files to disk
     '''
     f=open(index_fname,"w")
-    for i in index:
-        for ii in i:
-            f.write(ii)
+    for w,l in index:
+        f.write(w)
+        f.write(' ')
+        for i in l:
+            f.write(i)
             f.write(' ')
         f.write('\n')
     f.close()
@@ -227,6 +229,7 @@ def write_files():
     f=open(docs_fname,"w")
     for d in docs:
         f.write(d)
+        f.write('\n')
     f.close()
 
     f=open(word_freq_fname,"w")
@@ -259,11 +262,49 @@ def parse_files():
     '''
     parse the five files and store them into the global variables
     '''
-    f=open(index_fname,"w")
-    f=open(docs_fname,"w")
-    f=open(word_freq_fname,"w")
-    f=open(total_word_freq_fname,"w")
-    f=open(pagerank_fname,"w")
+    f=open(index_fname,"r")
+    lines=f.read().splitlines()
+    for l in lines:
+        toks=nltk.word_tokenize(l)
+        w=toks.pop(0)
+        toks=[int(i) for i in toks]
+        index[w]=toks
+    f.close()
+
+    f=open(docs_fname,"r")
+    docs=f.read().splitlines()
+    f.close()
+
+    f=open(word_freq_fname,"r")
+    lines=f.read().splitlines()
+    newdoc=True
+    for l in lines:
+        if newdoc:
+            word_frequency.append(dict())
+            newdoc=False
+        else:
+            toks=nltk.word_tokenize(l)
+            if len(toks)==2:
+                w=toks[0]
+                f=int(toks[1])
+                word_frequency[-1][w]=f
+            else:
+                newdoc=True
+    f.close()
+
+    f=open(total_word_freq_fname,"r")
+    lines=f.read().splitlines()
+    for l in lines:
+        toks=nltk.word_tokenize(l)
+        w=toks[0]
+        f=int(toks[1])
+        total_word_freq[w]=f
+    f.close()
+
+    f=open(pagerank_fname,"r")
+    lines=f.read().splitlines()
+    pageranks=[float(s) for s in lines]
+    f.close()
     return
 
 def search(query):
