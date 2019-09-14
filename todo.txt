@@ -7,7 +7,5 @@
 * read index/pagerank/word-frequency from disk (first check )
 * a document searcher
 
-- can we search only in one site?
-- checksum?
-- write file to disk?
-- do we have to implement or and not?
+*pagerank gives inf
+*freqrank

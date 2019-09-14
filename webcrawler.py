@@ -21,8 +21,8 @@ word_frequency=list() #word_frequency[doc_id]=dict(term:frequency)
 total_word_freq=dict() #total_word_freq[term]=frequency
 pageranks=list() #pagerank[doc_id]=ranking
 
-seed_url='https://en.wikipedia.org/wiki/Main_Page'
-crawl_num=100
+seed_url='https://en.wikipedia.org/wiki/Philosophy'
+crawl_num=1000
 
 #file names
 index_fname='index.txt'
@@ -41,8 +41,9 @@ def url_filter(links, doc_id):
     for link in links:
         if link in url_crawled:
             web_graph[docs.index(link)][0].append(doc_id)
-        elif ("/wiki/" in link):
-            valid_links.append(link)
+        elif "/wiki/" == link[:6] and link not in valid_links\
+                and "File" not in link and "Special" not in link:
+            valid_links.append("https://en.wikipedia.org"+link)
     return valid_links
 
 def process_words(w):
@@ -72,11 +73,17 @@ def parse_page(url,parent_id):
     add url to url_crawled
     '''
     # request the web
+    if url in url_crawled:
+        return
     try:
         page = urllib.request.urlopen(url)
     except ValueError:
         return
     except urllib.error.URLError:
+        return
+    except ConnectionResetError:
+        return
+    except TimeoutError:
         return
 
     page_raw = str(page.read())
@@ -169,19 +176,19 @@ def pagerank():
     takes in the web_graph and construct the pagerank list
     '''
     global pageranks
-    epsilon = 10e-5
+    epsilon = 10e-9
     alpha = 0.85
     graph = [np.array(node) for node in web_graph]
     num_doc = len(url_crawled)
     initial_rank = 1/num_doc
     constant_factor = (1-alpha)/num_doc
     cur_rank = np.repeat(initial_rank, num_doc)
-    prev_rank = cur_rank.copy()
-    while (abs(cur_rank-prev_rank) > epsilon).all():
+    prev_rank = [0]*len(cur_rank)
+    while (sum(abs(cur_rank-prev_rank)) > epsilon):
         prev_rank = cur_rank.copy()
         for i in range(num_doc):
             # web_graph is a list of (parents, children)
-            cur_rank[i] = constant_factor+alpha*np.sum(cur_rank(graph[i][0])/[len(graph[parent][1]) for parent in graph[i][0]])
+            cur_rank[i] = constant_factor+alpha*np.sum(cur_rank[graph[i][0]]/[len(graph[parent][1]) for parent in graph[i][0]])
     pageranks = cur_rank
     #print(pageranks)
 
@@ -201,8 +208,9 @@ def freqrank(pages,words):
             word_freq.append(word_frequency[page][word])
         term_freq.append(sum(word_freq))
     #inverted document frequencies
-    idf = math.log(len(url_crawled)/len(pages))
-    return np.array(term_freq)*idf
+    #idf = math.log(len(url_crawled)/len(pages))
+    #return np.array(term_freq)*idf
+    return np.array(term_freq)/np.array(page_len)
 
 def crawl():
     '''
@@ -278,6 +286,7 @@ def parse_files():
     f.close()
 
     f=open(docs_fname,"r")
+    global docs
     docs=f.read().splitlines()
     f.close()
 
@@ -309,6 +318,7 @@ def parse_files():
 
     f=open(pagerank_fname,"r")
     lines=f.read().splitlines()
+    global pageranks
     pageranks=[float(s) for s in lines]
     f.close()
     return
@@ -354,6 +364,8 @@ def search(query):
     if len(results)==0:
         return []
     # rank the documents according to page rank
+    print(results)
+    print(len(pageranks))
     score1=[pageranks[i] for i in results]
     score1=np.asarray(score1)
     score1=score1/np.sum(score1)
@@ -396,10 +408,14 @@ if __name__== "__main__":
         '''
 
     print('')
-    query = input("please enter your query: ") 
-    print('start searching!...')
-    results = search(query) # a list of doc_ids
-    print('finished searching! Here are the results:')
-    # print out the resulting url
-    for r in results:
-        print(docs[r])
+    while True:
+        query = input("please enter your query (enter q to quit): ") 
+        if query == "q":
+            break
+        print('start searching!...')
+        results = search(query) # a list of doc_ids
+        print('finished searching! Here are the results:')
+        # print out the resulting url
+        for r in results:
+            print(docs[r])
+        print('')
