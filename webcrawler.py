@@ -23,7 +23,7 @@ total_word_freq=dict() #total_word_freq[term]=frequency
 pageranks=list() #pagerank[doc_id]=ranking
 
 seed_url='https://en.wikipedia.org/wiki/Socrates'
-crawl_num=10
+crawl_num=400
 
 #file names
 index_fname='index.txt'
@@ -167,6 +167,7 @@ def parse_page(url,parent_id):
     url_frontier.extend(link_pairs[:2])
     #add to docs
     docs.append(url)
+    print(doc_id)
     url_crawled.append(url)
 
 def pagerank():
@@ -216,7 +217,7 @@ def freqrank(pages,words):
     #inverted document frequencies
     for word in words:
         idf.append(math.log(1+num_page/len(index[word])))
-    return np.sum(np.matmul(term_freq, idf).reshape((num_page, num_term)), axis=1)
+    return np.sum(np.multiply(term_freq, idf).reshape((num_page, num_term)), axis=1)
 
 def crawl():
     '''
@@ -379,8 +380,8 @@ def search(query):
     score2=np.asarray(score2)
     score2=score2/np.sum(score2)
     # combine the two rankings
-    print(score1)
-    print(score2)
+    print("pagerank:",score1)
+    print("freqrank:",score2)
     score=score1+score2
     ranking=np.argsort(score)
     ranking=list(ranking)
