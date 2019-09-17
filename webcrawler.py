@@ -21,8 +21,8 @@ word_frequency=list() #word_frequency[doc_id]=dict(term:frequency)
 total_word_freq=dict() #total_word_freq[term]=frequency
 pageranks=list() #pagerank[doc_id]=ranking
 
-seed_url='https://en.wikipedia.org/wiki/Philosophy'
-crawl_num=10
+seed_url='https://en.wikipedia.org/wiki/Socrates'
+crawl_num=300
 
 #file names
 index_fname='index.txt'
@@ -41,8 +41,10 @@ def url_filter(links, doc_id):
     for link in links:
         if link in url_crawled:
             web_graph[docs.index(link)][0].append(doc_id)
+            web_graph[doc_id][1].append(docs.index(link))
         elif "/wiki/" == link[:6] and link not in valid_links\
-                and "File" not in link and "Special" not in link:
+                and "File" not in link and "Special" not in link\
+                and ":" not in link:
             valid_links.append("https://en.wikipedia.org"+link)
     return valid_links
 
@@ -106,7 +108,6 @@ def parse_page(url,parent_id):
     #start parsing the page
     while i < len(tokens_raw):
         cur=tokens_raw[i]
-        #print("token:",cur)
         if getting_link:
             if cur == "''":
                 # reaches the end of url
@@ -116,21 +117,17 @@ def parse_page(url,parent_id):
                 cur_link=''
             else:
                 cur_link+=cur
-                #print(cur_link)
             i+=1
             continue
         if cur == '<' and not inside_tag:
-            #print("in!")
             inside_tag=True
             i+=1
             continue
         if cur == '>' and inside_tag:
-            #print("out!")
             inside_tag=False
             i+=1
             continue
         if cur == "href=" and inside_tag:
-            #print("href!")
             getting_link=True
             i+=2
             continue
@@ -166,7 +163,7 @@ def parse_page(url,parent_id):
     #process the links and add to the frontier
     filtered_links=url_filter(links,doc_id)
     link_pairs=[(l,doc_id) for l in filtered_links]
-    url_frontier.extend(link_pairs)
+    url_frontier.extend(link_pairs[:2])
     #add to docs
     docs.append(url)
     url_crawled.append(url)
@@ -179,7 +176,7 @@ def pagerank():
     epsilon = 10e-9
     alpha = 0.85
     graph = [np.array(node) for node in web_graph]
-    num_doc = len(url_crawled)
+    num_doc = len(docs)
     initial_rank = 1/num_doc
     constant_factor = (1-alpha)/num_doc
     cur_rank = np.repeat(initial_rank, num_doc)
@@ -191,7 +188,10 @@ def pagerank():
             if len(graph[i][0])==0:
                 cur_rank[i] = constant_factor
             else:
-                cur_rank[i] = constant_factor+alpha*np.sum(cur_rank[graph[i][0]]/[len(graph[parent][1]) for parent in graph[i][0]])
+                parent_scores=cur_rank[graph[i][0]]
+                parent_child_num=[len(graph[parent][1]) for parent in graph[i][0]]
+                cur_rank[i] = constant_factor+alpha*np.sum(parent_scores/parent_child_num)
+        cur_rank=cur_rank/np.sum(cur_rank)
     pageranks = cur_rank
 
 def freqrank(pages,words):
@@ -370,7 +370,6 @@ def search(query):
     if len(results)==0:
         return []
     # rank the documents according to page rank
-    #print(results)
     #print(len(pageranks))
     score1=[pageranks[i] for i in results]
     score1=np.asarray(score1)
@@ -403,6 +402,7 @@ if __name__== "__main__":
     else:
         print('start crawling!...')
         crawl()
+        #print(web_graph)
         print('finished crawling!')
         '''
         print(docs)
