@@ -193,7 +193,6 @@ def pagerank():
             else:
                 cur_rank[i] = constant_factor+alpha*np.sum(cur_rank[graph[i][0]]/[len(graph[parent][1]) for parent in graph[i][0]])
     pageranks = cur_rank
-    print(pageranks)
 
 def freqrank(pages,words):
     '''
@@ -201,19 +200,23 @@ def freqrank(pages,words):
     rank the pages according to the word frequency
     '''
     #term frequencies
-    page_len = []
+    num_page = len(pages)
+    num_term = len(words)
+    page_len = dict()
+    idf = list()
     for page in pages:
-        page_len.append(sum(word_frequency[page].values()))
-    term_freq = []
-    for page in pages:
-        word_freq= []
-        for word in words:
+        page_len[page]=sum(word_frequency[page].values())
+    term_freq = list()
+    for word in words:
+        word_freq = []
+        for page in pages:
             word_freq.append(word_frequency[page][word])
-        term_freq.append(sum(word_freq))
+        #print(sum(word_freq)/page_len[page])
+        term_freq.append(sum(word_freq)/page_len[page])
     #inverted document frequencies
-    idf = math.log(len(docs)/len(pages))
-    return np.array(term_freq)*idf
-    #return np.array(term_freq)/np.array(page_len)
+    for word in words:
+        idf.append(math.log(num_page/len(index[word])))
+    return np.array(term_freq)*np.array(idf)
 
 def crawl():
     '''
