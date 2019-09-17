@@ -1,3 +1,4 @@
+import collections
 import urllib.request
 import nltk
 from nltk.corpus import stopwords
@@ -22,7 +23,7 @@ total_word_freq=dict() #total_word_freq[term]=frequency
 pageranks=list() #pagerank[doc_id]=ranking
 
 seed_url='https://en.wikipedia.org/wiki/Socrates'
-crawl_num=300
+crawl_num=10
 
 #file names
 index_fname='index.txt'
@@ -202,21 +203,20 @@ def freqrank(pages,words):
     #term frequencies
     num_page = len(pages)
     num_term = len(words)
-    page_len = dict()
+    #page_len = dict()
     idf = list()
-    for page in pages:
-        page_len[page]=sum(word_frequency[page].values())
-    term_freq = list()
-    for word in words:
-        word_freq = []
-        for page in pages:
-            word_freq.append(word_frequency[page][word])
-        #print(sum(word_freq)/page_len[page])
-        term_freq.append(sum(word_freq)/page_len[page])
+    term_freq = np.zeros((num_page, num_term))
+    #for page in pages:
+    #    page_len[page]=sum(word_frequency[page].values())
+
+    for i in range(num_page):
+        for j in range(num_term):
+            #term_freq[i][j]=word_frequency[pages[i]][words[j]]/page_len[pages[i]]
+            term_freq[i][j] = 1+math.log(word_frequency[pages[i]][words[j]])
     #inverted document frequencies
     for word in words:
-        idf.append(math.log(num_page/len(index[word])))
-    return np.array(term_freq)*np.array(idf)
+        idf.append(math.log(1+num_page/len(index[word])))
+    return np.sum(np.matmul(term_freq, idf).reshape((num_page, num_term)), axis=1)
 
 def crawl():
     '''
@@ -379,6 +379,8 @@ def search(query):
     score2=np.asarray(score2)
     score2=score2/np.sum(score2)
     # combine the two rankings
+    print(score1)
+    print(score2)
     score=score1+score2
     ranking=np.argsort(score)
     ranking=list(ranking)
