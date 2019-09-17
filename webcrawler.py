@@ -45,6 +45,7 @@ def url_filter(links, doc_id):
             web_graph[doc_id][1].append(docs.index(link))
         elif "/wiki/" == link[:6] and link not in valid_links\
                 and "File" not in link and "Special" not in link\
+                and "disambiguation" not in link\
                 and ":" not in link:
             valid_links.append("https://en.wikipedia.org"+link)
     return valid_links
