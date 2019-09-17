@@ -22,7 +22,7 @@ total_word_freq=dict() #total_word_freq[term]=frequency
 pageranks=list() #pagerank[doc_id]=ranking
 
 seed_url='https://en.wikipedia.org/wiki/Philosophy'
-crawl_num=1000
+crawl_num=10
 
 #file names
 index_fname='index.txt'
@@ -188,9 +188,12 @@ def pagerank():
         prev_rank = cur_rank.copy()
         for i in range(num_doc):
             # web_graph is a list of (parents, children)
-            cur_rank[i] = constant_factor+alpha*np.sum(cur_rank[graph[i][0]]/[len(graph[parent][1]) for parent in graph[i][0]])
+            if len(graph[i][0])==0:
+                cur_rank[i] = constant_factor
+            else:
+                cur_rank[i] = constant_factor+alpha*np.sum(cur_rank[graph[i][0]]/[len(graph[parent][1]) for parent in graph[i][0]])
     pageranks = cur_rank
-    #print(pageranks)
+    print(pageranks)
 
 def freqrank(pages,words):
     '''
@@ -208,9 +211,9 @@ def freqrank(pages,words):
             word_freq.append(word_frequency[page][word])
         term_freq.append(sum(word_freq))
     #inverted document frequencies
-    #idf = math.log(len(url_crawled)/len(pages))
-    #return np.array(term_freq)*idf
-    return np.array(term_freq)/np.array(page_len)
+    idf = math.log(len(docs)/len(pages))
+    return np.array(term_freq)*idf
+    #return np.array(term_freq)/np.array(page_len)
 
 def crawl():
     '''
@@ -364,8 +367,8 @@ def search(query):
     if len(results)==0:
         return []
     # rank the documents according to page rank
-    print(results)
-    print(len(pageranks))
+    #print(results)
+    #print(len(pageranks))
     score1=[pageranks[i] for i in results]
     score1=np.asarray(score1)
     score1=score1/np.sum(score1)
