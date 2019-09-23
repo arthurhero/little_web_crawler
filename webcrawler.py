@@ -9,8 +9,6 @@ import os.path
 import numpy as np
 import math
 
-#TODO: add synonyms, NOT OR queries, if have time
-
 # initialize lemmatizer and get stop word list
 lemmatizer = WordNetLemmatizer()
 stop_words = set(stopwords.words('english'))
@@ -344,7 +342,6 @@ def parse_files():
     docs = f.read().splitlines()
     f.close()
     # set up word frequency dictionaries for each doc
-    # TODO: check
     f = open(word_freq_fname, "r")
     global word_frequency
     lines = f.read().splitlines()
