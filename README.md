@@ -1,4 +1,4 @@
-# To start using our search engine, follow these steps:
+# To Start...
 1. Find the variable "seed_url" in the code file "webcrawler.py", and set this variable to an url of any wikipedia page.
    (Our search engine specifically focuses on wikipedia pages by having an url filter that filters out non-wiki pages.)
    Think of this url as the starting point of our search engine - this url will be the first page that our search engine crawls.
